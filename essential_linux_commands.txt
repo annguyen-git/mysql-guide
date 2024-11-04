@@ -1,0 +1,188 @@
+
+Essential Linux Commands with Examples. This file will help you learn the basic of Linux commands, which is essential for learning data administration.
+
+1. cd (Change Directory)
+Example:
+	cd /home/user/documents
+	cd / 				go to the root directory
+	cd ~ or cd 			go to home directory
+	cd .. 				go back to previous directory
+------------------------------------------------------------
+
+2. ls (List Directory Contents)
+Examples:
+     	ls /home/user/documents
+	ls -l path 			detailed view with permissions, owner, size, etc.
+	ls -a path  			show hidden files
+
+------------------------------------------------------------
+
+3. pwd (Print Working Directory)
+Example:
+	pwd				return current directory that you are in
+
+------------------------------------------------------------
+
+4. mkdir (Make Directory)
+Example:
+	mkdir new_folder
+	mkdir new_folder1 new_folder2
+	mkdir data/raw
+
+------------------------------------------------------------
+
+5. touch (Create File or Update Timestamp)
+Example:
+	touch newfile.txt
+
+------------------------------------------------------------
+
+6. echo (Display Text or Create File with Content)
+Example:
+	echo "Hello, World!"			display Hello, World! on terminal
+     	echo "Hello, World!" > myfile.txt	write myfile.txt with Hello, World! as content
+
+------------------------------------------------------------
+
+7. find (Search for Files and Directories)
+Example:
+	find /usr/bin -name "*.txt"		list all text files in /usr/bin
+	find -type f -name "arc*"		list all files with name start with arch
+	find -type d -name "b*"			list all directories with name start with b
+
+------------------------------------------------------------
+
+8. mv (Move or Rename Files and Directories)
+Example:
+     	mv oldname.txt newname.txt				rename the file
+	mv my.cnf /private/etc					move my.cnf to etc folder
+	mv /Users/Downloads/config.txt /private/etc/my.cnf	
+
+------------------------------------------------------------
+
+9. rm (Remove Files or Directories) **(Warning: use with caution as this is permanent)**
+Examples:
+     	rm filename.txt         		delete a file
+	rm pic.png manual.pdf			delete files
+     	rm -r directory_name    		delete a directory and its contents
+	rm -r -f or rm -rf			ignore nonexistent files and arguments, never prompt (avoid using this, please delete only file you want using rm without any option)
+
+------------------------------------------------------------
+
+10. cp (Copy Files or Directories)
+Example:
+     	cp source.txt destination.txt
+	cp /Users/Downloads/source.txt target.txt
+	cp -R /Users/folder1 /Users/folder2	copy the folder content
+
+------------------------------------------------------------
+
+11. cat (Concatenate and Display File Content)
+Example:
+      	cat filename.txt			display file content
+	cat > filename.txt			create new file
+	cat file1.txt file2.txt > newfile.txt	concatenate two file into new one.
+
+
+------------------------------------------------------------
+
+11. man (Manual)
+Example:
+      	man ls
+
+------------------------------------------------------------
+
+12. grep (Search Text Within Files)
+Example:
+      	grep "pattern" filename.txt
+
+------------------------------------------------------------
+
+13. cat /etc/passwd, su and whoami
+
+cat /etc/passwd show all users
+
+su (Switch User)
+Example:
+	su admin			switch to user "admin"
+	su or su root			switch to root. On Mac, it will return: "Sorry" as you can't use root on Mac
+
+whoami (Show Current User)
+
+------------------------------------------------------------
+
+13. chmod (Change File Permissions)
+Structure:
+	chmod [permission] filename
+	permissions include:
+		r (read) = 4
+		w (write) = 2
+		x (execute) = 1
+	chmod give permission to user, group and other user,
+	so 777 means give all permissions to user, group and other user
+	and 774 gives all all permissions to user and group but only read to other user.
+
+	options include:
+		u = user
+		g = group
+		o = others
+		a = all (user, group, others)
+	Usually, we does not specify these options, instead we use numeric notation like said above.
+
+Example:
+	chmod u=rwx, g=r, o=r filename 
+	chmod 755 filename
+	chmod 777 filename
+
+------------------------------------------------------------
+
+14. chown (Change File Owner and Group)
+Example:
+	chown user:group filename
+	chown --from=admin root filename	change ownership of file to root if only it's owned by admin
+	chown user filepath/*
+	chown -R user filepath/
+
+------------------------------------------------------------
+
+19. sudo (Run Command with Superuser Privileges)
+Structure:
+	sudo + [command]
+
+Example:
+	sudo apt update
+	sudo rm filename
+	sudo chown user file name
+
+------------------------------------------------------------
+
+20. ps (Display Running Processes)
+Example:
+      	ps aux			shows all processes, by users, PID...
+	ps -A			shows all processes by PID
+	ps -u user		shows all processes by user
+	ps -p 11567		shows process of a specific PID
+	ps aux | grep python	shows all python processes
+
+------------------------------------------------------------
+
+21. kill (Terminate Process)
+Example:
+      	kill PID
+	kill 11567
+
+------------------------------------------------------------
+
+23. wget (Download Files from the Internet)
+Example:
+      wget http://example.com/file.txt
+
+------------------------------------------------------------
+
+24. curl (Transfer Data to or from a Server)
+Example:
+      curl -O http://example.com/file.txt
+
+------------------------------------------------------------
+This file provides a quick reference for essential Linux commands with examples. 
+Remember to use `man` for more detailed information on any command.
