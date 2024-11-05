@@ -1,0 +1,49 @@
+MySQL home directory on Mac: usr/local/mysql
+How to start and stop MySQL on Mac through terminal:
+
+mysql.server start
+mysql.server stop
+
+You may encounter an error. The reason can be one of these:
+- MySQL path hasn't been added to $PATH
+	How to check?
+	Step 1:
+		echo $PATH (to see paths)
+		printenv PATH or env | PATH do the same thing
+	Step 2:
+		nano /etc/paths and add these to the file
+		/usr/local/mysql/bin/
+		/usr/local/mysql/support-files/ 	(you now can use any program that under this directory)
+		or export PATH=${PATH}:/usr/local/mysql/bin (incase you only want session temporary change)
+
+
+- Insufficient privilege for _mysql user
+	How to check?
+	Step 1:
+		ls -l /usr/local/mysql (1)
+		If this return a symbolic link, run
+		ls -l /usr/local/mysql-version-macosversion, replace it with your actual directory returns by (1)
+	Step 2:
+		sudo chown -R _mysql /usr/local/mysql/ 	(change the owner of folder and all directories under it to _mysql)
+		sudo chmod -R 777 /usr/local/mysql/	(change permission to rwx)
+		or you can run it not on the symbolic link
+		sudo chown -R _mysql /usr/local/mysql-version-macosversion
+		sudo chmod -R 777 /usr/local/mysql-version-macosversion
+
+- You may want to set up MYSQL_HOME
+	Step 1:
+		echo $MYSQL_HOME or printenv MYSQL_HOME to see if you already have that variable.
+		to see all variable run printenv
+	Step 2:
+		export MYSQL_HOME="/usr/local/mysql"	(session only)
+		nano ~/.zshrc and add this line
+			export MYSQL_HOME="/usr/local/mysql" (beware the spacing, zsh style require no spacing)
+	Step 3: run .zshrc file
+	source ~/.zshrc
+		
+- You may want to remove your redo logs
+	rm /usr/local/mysql/data/ib_logfile* (replace with your actual directory)
+
+	
+		
+

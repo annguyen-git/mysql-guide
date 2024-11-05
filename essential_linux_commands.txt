@@ -133,6 +133,7 @@ Example:
 	chmod u=rwx, g=r, o=r filename 
 	chmod 755 filename
 	chmod 777 filename
+	chmod -R 777 path/to/folder/ 	change permission for all directories under this folder.
 
 ------------------------------------------------------------
 
