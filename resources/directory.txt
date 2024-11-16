@@ -1,0 +1,16 @@
+Set this as MYSQL_HOME variable
+/usr/local/mysql
+.
+├── bin
+│   └── mysql, mysql, mysql safe...
+├── data
+│   └── logs & data files
+├── docs
+├── keyring
+├── lib
+│   └── plugins, package configurations...
+├── man
+├── share
+└── support-files (support program)
+
+

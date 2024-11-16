@@ -1,0 +1,85 @@
+MySQL home directory on Mac: usr/local/mysql
+
+Run this to start, stop and check status of MySQL on Mac:
+	mysql.server start
+	mysql.server stop
+	mysql.server status
+
+	Usage: mysql.server  {start|stop|restart|reload|force-reload|status}
+
+Or if you install MySQL through home brew, you can run:
+	brew services start mysql
+	brew services stop mysql 
+	brew service list
+
+
+You may encounter an error. The reason can be one of these:
+
+- Not set up configuration file probably. You may want to set up MYSQL_HOME then update my.cnf file so it can get correct directories of mysql programs.
+
+	Step 1:
+		echo $MYSQL_HOME or printenv MYSQL_HOME to see if you already have that variable.
+		to see all variable run printenv
+	Step 2:
+		export MYSQL_HOME="/usr/local/mysql"	(session only)
+		nano ~/.zshrc and add this line
+			export MYSQL_HOME="/usr/local/mysql" (beware the spacing, zsh style requires no spacing)
+
+		or run this 
+		cat << EOF >> ~/.zshrc
+		# Add MYSQL_HOME to variable
+		export MYSQL_HOME="/usr/local/mysql"
+		EOF
+		run source ~/.zshrc
+		
+		or you can do the same but save it in ~/.zprofile instead
+
+
+- MySQL path hasn't been added to $PATH
+
+	Step 1:
+		echo $PATH (to see paths)
+		printenv PATH or env | PATH do the same thing
+	Step 2:
+		nano /etc/paths and add these to the file
+		/usr/local/mysql/bin/
+		/usr/local/mysql/support-files/ 	(you now can use any program that under this directory)
+		
+		if use don't want to use nano to edit it, run this 
+		sudo bash -c 'echo "/usr/local/mysql/bin/" >> /etc/paths'
+		sudo bash -c 'echo "/usr/local/mysql/support-files/" >> /etc/paths'
+
+		or
+		sudo bash -c 'cat << EOF >> /etc/paths
+		/usr/local/mysql/bin/
+		/usr/local/mysql/support-files/
+		EOF'
+
+		or 
+		export PATH=${PATH}:/usr/local/mysql/bin (incase you only want session temporary change)
+
+		Remember to restart your terminal for the change to take effect.
+		printenv PATH to check if your path appears in the Path variable.
+		
+
+
+- Insufficient privilege for _mysql user
+
+	Step 1:
+		ls -l /usr/local/mysql (1)
+		If this return a symbolic link, run
+		ls -l /usr/local/mysql-version-macosversion, replace it with your actual directory returns by (1)
+	Step 2:
+		sudo chown -R _mysql /usr/local/mysql/ 	(change the owner of folder and all directories under it to _mysql)
+		sudo chmod -R 777 /usr/local/mysql/	(change permission to rwx)
+		or you can run it not on the symbolic link
+		sudo chown -R _mysql /usr/local/mysql-version-macosversion
+		sudo chmod -R 777 /usr/local/mysql-version-macosversion
+
+		
+- You may want to remove your redo logs
+	rm /usr/local/mysql/data/ib_logfile* (replace with your actual directory)
+
+	
+		
+
