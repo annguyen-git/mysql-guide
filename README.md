@@ -1,6 +1,6 @@
 # Understanding Your Queries
-
-I worked as an unofficial, part-time MySQL database administrator (self-claimed) for one years and earned my MySQL 8.0 Administrator certification in 2023. My official position at the company was as an ETL developer, but I had the opportunity to assist the DBA team with MySQL database optimization on a casual basis. At that time, I have already learning database administration for three years.
+### Something about me
+I worked as an unofficial, part-time MySQL database administrator (self-claimed) for one years and earned my MySQL 8.0 Administrator certification in 2023. My position at the company was as an ETL developer, but I had the opportunity to assist the DBA team with MySQL database optimization on a casual basis. At that time, I have already learning database administration for three years.
 
 Later, I decided to take a break and go abroad to pursue a master’s degree, so I haven't had the chance to work with MySQL since. I'm not sure if I'll work with MySQL again in the future, but it would be a shame to forget everything I've spent so much time learning. Creating these notes not only helps me reinforce what I've learned, but my main goal is to support those new to database administration by providing a solid foundation of how query work and how to optimize them in MySQL.
 
@@ -15,19 +15,19 @@ MySQL is an open-source relational database management system (RDBMS) that uses 
 
 In this repository, you will learn:
 
-1. **MySQL Architecture**
+1. **Database Architecture**
 - MySQL architecture
 - Storage engines architecture
-- Directory structure of the MySQL server
 
 2. **Query Optimization**
 - Misconceptions
 - The execution plan
-- Best practices for indexing
+- Indexing and Partitioning  (Updating)
 
 
 
 ## 1. Database Architecture
+### I. General Architecture
 Before diving into the query optimization section, it’s important to understand the architecture of the database system. 
 
 Most databse follow a structure similar to a three-tier architecture, which can be simplified as shown in this illustration.
@@ -43,7 +43,7 @@ For example, this is the architecture of MySQL:
 ![](resources/mysql_architecture.jpg)
 
 
-## Client Layer
+### Client Layer
 The client, or application layer, is straightforward to understand. It represents any application used to connect to and interact with the database server. This can be a web application, an SQL GUI, SQL CLI, Azure Studio, MySQL Workbench and more. In fact, you can’t directly interact with database without a client. For example, when you open a terminal and type ```mysql```, you’re using a query interface, which is also a type of client.
 
 Here is an example of connecting to MySQL server using ```mysql```
@@ -68,7 +68,7 @@ mysql>
 
 The client connects to the server through ```connectors```, or you can also call them APIs. There are various connectors available, such as JDBC, ODBC, C++, C, and Python, depending on the application you’re using.
 
-## Server Layer
+### Server Layer
 The server layer consists of many components, but we can simplify it into two sub-layers: the service layer and the storage layer.
 
 The service layer includes everything above the storage engine in the architecture. There are two main components to focus on here: the cache and buffer area, and the query processing components.
@@ -83,7 +83,7 @@ The service layer includes everything above the storage engine in the architectu
 
 **Cache and Buffer**: This section holds all information related to the session, including queries, changes, and the storage engine’s cache and buffer. So if you run a query twice, the second time will run faster since all data is already stored here.
 
-### Storage engine
+### II. Storage engine
 
 The storage engine is responsible for interacting with the underlying data at the physical server level. Its job is to manage data files, table spaces and logs.
 
@@ -153,10 +153,11 @@ The most important component in the server layer is the storage engine. The key 
 
 ## 2. Query Optimization  
 
-### Misconceptions
+### I. Misconceptions
 Before diving into this section, I want to address some common misconceptions about query optimization:
-1. **Adding `WHERE` conditions or `LIMIT` makes queries faster because they return less data.**  
-2. **Creating indexes always improves query performance.**  
+- **Misconception number 1: Adding `WHERE` conditions or `LIMIT` makes queries faster because they return less data.**
+- **Misconception number 2: Never use SELECT * because it is always slow**
+- **Misconception number 3: Using indexes always improves query performance.**  
 
 Both of these assumptions are false. While these methods can sometimes make your query run faster, it’s often just coincidental.  
 
@@ -169,7 +170,7 @@ We’ve already covered how storage engines store data in the Architecture secti
 
 When you run a query, you might expect the server to search through the data files stored on disk for the relevant rows and load them into memory. However, that’s not how it works.  
 
-Remember, data is stored in **pages**—the smallest unit of database I/O. When you run a query, the database doesn’t retrieve individual rows; instead, it loads the **entire page** containing the data into memory. From there, the storage engine filters the relevant rows.  
+Remember, data is stored in **pages**—the smallest piece of data that database handles. When you run a query, the database doesn’t retrieve individual rows; instead, it loads the **entire page** containing the data into memory. From there, the storage engine filters the relevant rows.  
  
 In practice, even if you’re retrieving only a few rows, the execution time can still be very long. This often happens when your data is **spread across many pages**. The storage engine needs to scan all these pages and load the relevant ones into memory, which increases the runtime. 
 
@@ -237,32 +238,209 @@ The difference lies in the ```ORDER BY``` clause. When the query includes ORDER 
 
 These two additional steps—sorting and filtering—make the query with ```ORDER BY``` and ```LIMIT``` take longer, despite returning fewer rows. Even though the result set is smaller, both queries use the same number of data pages stored in cache. The extra processing steps in the first query result in a longer runtime.
 
-### Execution Plan
-So what is behind all of this
-Remember we have things called query planner and query optimizer?. Their job is to tell the storage engine the best way to retrieve data. and what consider the best? The answer is that it will chose the option with **minimal** I/O. Well, there are indeed many criteria and parameter that database uses to assesss the best plan, but I/O is the most important thing. These parameters, combine to gether and database will give out a thing call 'cost'. the lowest cost execution plan will be chose.
-By using ```EXPLAIN``` we can see the execution plan of each query
+### II. Execution Plan
 
-![](resources/explain.png)
+Remember the query planner and query optimizer? Their job is to determine the **best way** for the storage engine to retrieve data.  
 
 
+#### What Does "Best" Mean?  
 
+The "best" execution plan is the one with the **minimal I/O**. While databases consider many criteria and parameters to assess the best plan, I/O remains the most critical factor. These parameters are combined to calculate a value called the **cost**. The execution plan with the **lowest cost** is consider the **best** and chosen by the database.
 
+---
 
+#### How Can We See the Execution Plan?  
 
+By using the `EXPLAIN` keyword, you can view the execution plan for each query. This allows you to understand how the database processes your query and how it determines the most efficient plan. 
 
+Here's an example of using `EXPLAIN` to understand the execution plan for a query, it gives the astimated value for parameters.
 
+```bash
+mysql> USE database1
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
 
+Database changed
+mysql> EXPLAIN SELECT * FROM employees 
+    -> WHERE salary >40000 AND age < 30;
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+| id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows    | filtered | Extra       |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+|  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 1180959 |    11.11 | Using where |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
 
+mysql> 
+```
+#### Key Parameters to Pay Attention To
+1. table: Which table(s) are used in the query.
+2. partitions: If any partitions are used.
+3. type: How the table is scanned. Common values:
+- ALL: Full table scan.
+- ref: Uses an index.
+4. possible_keys: Possible indexes that could be used.
+5. key: Current index used
+6. rows: Estimated number of rows scanned.
 
+To get actual values, use ```EXPLAIN ANALYZE```:
 
+```bash
+mysql> EXPLAIN ANALYZE SELECT * FROM employees 
+    -> WHERE salary >40000 AND age < 30;
 
+EXPLAIN
+-> Filter: ((employees.salary > 40000.00) and (employees.age < 30))  (cost=119193 rows=131191) (actual time=0.33..277 rows=315729 loops=1)
+-> Table scan on employees  (cost=119193 rows=1.18e+6) (actual time=0.315..206 rows=1.19e+6 loops=1)
 
+1 row in set (0.30 sec)
+```
 
+**Explanation**
+- Filter: Shows the filtering conditions applied, along with the estimated and actual number of rows processed (rows) and execution time (actual time).
+- Table scan: Indicates the type of scan performed on the table, along with estimated (cost) and actual row counts.
 
+```EXPLAIN ANALYZE``` provides more precise insights by including actual execution times and row counts, making it extremely helpful for understanding and optimizing queries.
 
+Here, you will notice the **cost** (cost=119193) that I mentioned in earlier section. The database chooses the execution plan based on this value. You can also use **cost** to compare your queries and determine which one performs the best by having the lowest cost.
 
+What Determines Cost?
+The cost of an execution plan is influenced by several factors, including:
 
+- **I/O Operations**:
+How many data pages need to be read or writen from disk. This is often the dominant factor in cost calculation.
+- **Indexes**:
+Whether an index can be used to skip scanning unnecessary data pages. Indexes reduce I/O and, consequently, cost.
+- **Joins and Sorting**:
+Queries with complex joins or sorts have higher computational costs, reflected in the cost value.
+- **Buffer Pool Efficiency**:
+Data already cached in memory is faster to access, reducing cost compared to fetching from disk.
 
-Useful links
-- https://www.sqlservercentral.com/articles/understanding-the-internals-of-a-data-page
-- https://www.alibabacloud.com/blog/mysql-memory-allocation-and-management-part-ii_600992
+In practice, a lower cost typically means the query will require fewer resources (such as I/O operations and CPU time), which usually leads to better performance, often reflected in a shorter runtime. 
+
+There are many ways to reduce cost. The most common one is using indexes. Proper indexing can greatly reduce the number of rows and pages the database needs to scan, speeding up query execution. Other strategies include optimizing joins, reducing the number of unnecessary columns selected (for some database like Reddis or Snowflake), and avoiding full table scans. In some cases, adjusting the query cache or buffer pool settings can also help improve performance.
+
+To conclude this part, you can now address misconception number 2: *"Never use SELECT * because it is always slow."* 
+
+*Hint: Its depends on the query's execution plan and the data distribution. You can look at the cost of each query to compare their performance.*
+
+### III. Indexing and Partitioning
+Using an index is an excellent way to enhance query performance. Let’s look at the following example:
+```sql
+EXPLAIN SELECT name FROM employees 
+WHERE salary >79000;
+```
+Without index, the result is:
+```
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+| id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows    | filtered | Extra       |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+|  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 1180959 |    33.33 | Using where |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+```
+With index, the result is:
+
+```
++----+-------------+-----------+------------+-------+---------------+------------+---------+------+-------+----------+-----------------------+
+| id | select_type | table     | partitions | type  | possible_keys | key        | key_len | ref  | rows  | filtered | Extra                 |
++----+-------------+-----------+------------+-------+---------------+------------+---------+------+-------+----------+-----------------------+
+|  1 | SIMPLE      | employees | NULL       | range | salary_idx    | salary_idx | 6       | NULL | 43946 |   100.00 | Using index condition |
++----+-------------+-----------+------------+-------+---------------+------------+---------+------+-------+----------+-----------------------+
+```
+As you can see, with the index, the number of rows scanned is significantly lower, and the ```WHERE``` condition is no longer needed because the index itself efficiently filters the relevant rows.
+
+Now, look at the cost:
+```
+-> Index range scan on employees using salary_idx over (79000.00 < salary), with index condition: (employees.salary > 79000.00)  (cost=19776 rows=43946) (actual time=0.0933..58.5 rows=23613 loops=1)
+```
+The cost is now just 19776, which is much lower compared to the full table scan cost of 119193.
+
+Index works by creating a smaller, sorted data structure (typically a B-tree or hash) that references the locations of rows in the main table. Instead of scanning the entire table to find rows that match the `WHERE` condition, the database can use the index to quickly locate relevant rows.
+
+For example, if you create an index on the `salary` column, MySQL creates a sorted structure of `salary` values with pointers to the rows in the table where those values are stored. When you execute a query with a condition like `salary > 79000`, the database scans only the relevant portion of the index, significantly reducing the number of rows and pages it needs to read from disk.
+
+However, indexes come with a trade-off. They put additional pressure on your hardware storage, as extra space is required to store the index structures. 
+
+Coming back to misconception number 3: *Using indexes always improves query performance.*
+
+One thing we can immediately deduce from the information above is that maintaining indexes can also slow down write operations (inserts, updates, deletes). Whenever data changes, the indexes need to be updated as well, which adds overhead. This is because the index structures need to reflect changes in the underlying data, and each write operation will trigger an update to the associated indexes. In high-volume write environments, this can lead to significant performance degradation.
+
+Sometimes, an index might not work as expected. Usually, this happens when an index is inefficient because it’s not selective enough, meaning it doesn’t filter out many rows. For example, if you have an index on a column where most of the rows have the same value, the index won’t narrow down the search significantly. In such cases, the query planner might decide to use a full table scan instead of the index.
+
+To create an effective index, it’s important to choose columns with high uniqueness, also known as high ```cardinality```.
+
+However, what if you don’t have any columns with high uniqueness to create an index? In this case, one option is to create a composite index—an index that involves multiple columns. This approach helps increase the uniqueness of the index by combining values from multiple columns, which can make the index more selective and improve query performance.
+
+Example:
+We create this index using age column, and run the ```EXPLAIN``` query
+```sql
+CREATE INDEX age_idx ON employees (age);
+EXPLAIN SELECT name FROM employees 
+WHERE age = 25;
+```
+we get the result like this:
+```
++----+-------------+-----------+------------+------+---------------+---------+---------+-------+-------+----------+-------+
+| id | select_type | table     | partitions | type | possible_keys | key     | key_len | ref   | rows  | filtered | Extra |
++----+-------------+-----------+------------+------+---------------+---------+---------+-------+-------+----------+-------+
+|  1 | SIMPLE      | employees | NULL       | ref  | age_idx       | age_idx | 5       | const | 79790 |   100.00 | NULL  |
++----+-------------+-----------+------------+------+---------------+---------+---------+-------+-------+----------+-------+
+```
+Then we add a composite index using two column age and salary columns and run the query again
+```sql
+CREATE INDEX idx_age_salary ON employees (age, salary);
+EXPLAIN SELECT name FROM employees 
+WHERE age = 25;
+```
+the result now looks like this:
+```
++----+-------------+-----------+------------+------+------------------------+----------------+---------+-------+-------+----------+-------+
+| id | select_type | table     | partitions | type | possible_keys          | key            | key_len | ref   | rows  | filtered | Extra |
++----+-------------+-----------+------------+------+------------------------+----------------+---------+-------+-------+----------+-------+
+|  1 | SIMPLE      | employees | NULL       | ref  | age_idx,idx_age_salary | idx_age_salary | 5       | const | 35952 |   100.00 | NULL  |
++----+-------------+-----------+------------+------+------------------------+----------------+---------+-------+-------+----------+-------+
+```
+Notice how the database now chooses the composite index as the index used in the execution plan, and the number of rows scanned decreases significantly. This is because the composite index, which includes multiple columns, provides a more selective filter than individual indexes on each column.
+
+One thing you need to pay attention when using a composite index is that it has a rule to follow.
+
+Now let's look at these three queries and their result.
+
+Query 1:
+```sql
+EXPLAIN SELECT name FROM employees 
+WHERE age = 25 AND salary >50000;
+```
+```
++----+-------------+-----------+------------+-------+----------------+----------------+---------+------+-------+----------+-----------------------+
+| id | select_type | table     | partitions | type  | possible_keys  | key            | key_len | ref  | rows  | filtered | Extra                 |
++----+-------------+-----------+------------+-------+----------------+----------------+---------+------+-------+----------+-----------------------+
+|  1 | SIMPLE      | employees | NULL       | range | idx_age_salary | idx_age_salary | 11      | NULL | 46898 |   100.00 | Using index condition |
++----+-------------+-----------+------------+-------+----------------+----------------+---------+------+-------+----------+-----------------------+
+```
+Query 2:
+```sql
+EXPLAIN SELECT name FROM employees 
+WHERE salary >50000;
+```
+```
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+| id | select_type | table     | partitions | type | possible_keys | key  | key_len | ref  | rows    | filtered | Extra       |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+|  1 | SIMPLE      | employees | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 1180959 |    33.33 | Using where |
++----+-------------+-----------+------------+------+---------------+------+---------+------+---------+----------+-------------+
+```
+Query 3:
+```sql
+EXPLAIN SELECT name FROM employees 
+WHERE age = 25;
+```
+```
++----+-------------+-----------+------------+------+----------------+----------------+---------+-------+-------+----------+-------+
+| id | select_type | table     | partitions | type | possible_keys  | key            | key_len | ref   | rows  | filtered | Extra |
++----+-------------+-----------+------------+------+----------------+----------------+---------+-------+-------+----------+-------+
+|  1 | SIMPLE      | employees | NULL       | ref  | idx_age_salary | idx_age_salary | 5       | const | 75952 |   100.00 | NULL  |
++----+-------------+-----------+------------+------+----------------+----------------+---------+-------+-------+----------+-------+
+```
+
+As you can see only query 1 and 3 are using the index, while query 2 is using full table scan. In a composite index, the order of the columns in the index is very important. The database uses the index in a left-to-right order. This means the query must use the leading column(s) in the same order as they appear in the index for the index to be fully utilized. This is called the ```Leftmost Prefix Rule```.
