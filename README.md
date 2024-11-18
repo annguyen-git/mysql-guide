@@ -1,9 +1,4 @@
 # Understanding Your Queries
-### Something about me
-I worked as an unofficial, part-time MySQL database administrator (self-claimed) for one years and earned my MySQL 8.0 Administrator certification in 2023. My position at the company was as an ETL developer, but I had the opportunity to assist the DBA team with MySQL database optimization on a casual basis. At that time, I have already learning database administration for three years.
-
-Later, I decided to take a break and go abroad to pursue a master’s degree, so I haven't had the chance to work with MySQL since. I'm not sure if I'll work with MySQL again in the future, but it would be a shame to forget everything I've spent so much time learning. Creating these notes not only helps me reinforce what I've learned, but my main goal is to support those new to database administration by providing a solid foundation of how query work and how to optimize them in MySQL.
-
 ### Important note
 The way all relational databases handle queries is fundamentally the same across current products on the market. In this repository, I use MySQL as an example, but you can apply this knowledge to any database you work with.
 
