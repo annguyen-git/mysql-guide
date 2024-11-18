@@ -90,7 +90,7 @@ Storage engine in-memory architecture:
 
 The graph above shows a simplified version of the storage engine architecture. I’ve simplified it to emphasize one key point: the page is the smallest data unit that a storage engine works with. This concept is similar across many database systems. For example, in Oracle, these units are called blocks, while in MySQL and MS SQL, they’re called pages.
 
-When discussing how a database searches for data in storage, it’s important to note that **database doesn’t search for rows directly—it searches for pages, which contains data rows.**
+When discussing how a database searches for data in storage, it’s important to note that **database doesn’t work with rows directly, but with pages, which contains data rows.**
 
 These pages are stored inside a tablespace. What is a tablespace? It’s exactly what the name suggests: a space for a table. This is a logical concept. By default, each table has its own tablespace, and in MySQL, you can find these in your hardware storage as .ibd files (InnoDB data files).
 
@@ -235,7 +235,7 @@ These two additional steps—sorting and filtering—make the query with ```ORDE
 
 ### II. Execution Plan
 
-Remember the query planner and query optimizer? Their job is to determine the **best way** for the storage engine to retrieve data.  
+Remember the query planner and query optimizer? Their job is to determine the **best way** for the storage engine to retrieve data. All RDBMs form a execution plan for a query before it actually execute it.
 
 
 #### What Does "Best" Mean?  
@@ -246,9 +246,9 @@ The "best" execution plan is the one with the **minimal I/O**. While databases c
 
 #### How Can We See the Execution Plan?  
 
-By using the `EXPLAIN` keyword, you can view the execution plan for each query. This allows you to understand how the database processes your query and how it determines the most efficient plan. 
+In MySQL, by using the `EXPLAIN` keyword, you can view the execution plan for each query. This allows you to understand how the database processes your query and how it determines the most efficient plan. Different databases have their different commands for showing the execution plan, but they all contain the same key informations.
 
-Here's an example of using `EXPLAIN` to understand the execution plan for a query, it gives the astimated value for parameters.
+Here's an example of using `EXPLAIN` in MySQL to understand the execution plan for a query, it gives the astimated value for parameters.
 
 ```bash
 mysql> USE database1
@@ -395,7 +395,7 @@ the result now looks like this:
 |  1 | SIMPLE      | employees | NULL       | ref  | age_idx,idx_age_salary | idx_age_salary | 5       | const | 35952 |   100.00 | NULL  |
 +----+-------------+-----------+------------+------+------------------------+----------------+---------+-------+-------+----------+-------+
 ```
-Notice how the database now chooses the composite index as the index used in the execution plan, and the number of rows scanned decreases significantly. This is because the composite index, which includes multiple columns, provides a more selective filter than individual indexes on each column.
+Notice how the database now chooses the composite index as the index used in the execution plan, and the number of rows scanned decreases significantly (79790 vs 35952). This is because the composite index, which includes multiple columns, provides a more selective filter than individual indexes on each column.
 
 One thing you need to pay attention when using a composite index is that it has a rule to follow.
 
